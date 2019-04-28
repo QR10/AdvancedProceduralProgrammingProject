@@ -23,29 +23,36 @@ struct node {
 	struct node* NEXT;
 };
 
-void login();
-void AddElementAtStart(struct node** top);
-void AddElementAtEnd(struct node* top);
+void AddElementAtStart(struct node** top, int ppsNumber);
+void AddElementAtEnd(struct node* top, int ppsNumber);
 void DeleteElementAtStart(struct node** top);
 void DisplayList(struct node* top);
 void loadDatabase(struct node** top);
-void displayPatient(struct node* top);
 int Listlength(struct node* top);
-void updatePatient(struct node** top);
 int searchList(struct node* top, int searchPPS);
+void DeleteElementAtPos(struct node* top, int position);
+void saveDatabase(struct node* top);
+
+void login();
+void displayPatient(struct node* top);
+void updatePatient(struct node** top);
+void updatePatientAtAdding(struct node** top, int ppsNumber);
 float calculateBMI(float weight, float height);
 int ppsnToPos(struct node* top, int searchPPS);
-void DeleteElementAtPos(struct node* top, int position);
+void generateStats(struct node* top);
+
 
 void main()
 {
+	// Login system
+	login();
+
 	struct node* headPtr = NULL;
 	int choice;
 	int position = 0;
 	int pps = 0;
 	int posFound = 0;
-	// Login system
-	//login();
+	int patientUpdate = 0;
 
 	// Loading database from file
 	loadDatabase(&headPtr);
@@ -58,6 +65,9 @@ void main()
 		printf("  2 - To display all patients\n");
 		printf("  3 - To search and display a patient details\n");
 		printf("  4 - To search and update patient details\n");
+		printf("  5 - To delete a patient with the patient PPSN\n");
+		printf("  6 - To generate statistics\n");
+		printf("  7 - To save the database\n");
 		printf(" -1 - To exit\n");
 		printf("=============================================\n\n");
 		scanf("%d", &choice);
@@ -65,13 +75,28 @@ void main()
 		switch (choice)
 		{
 		case 1:
-			printf("Adding a new patient\n");
+			printf("\nPlease enter patient PPSN: \n");
+			scanf("%d", &pps);
 
-			if (headPtr == NULL)
-				AddElementAtStart(&headPtr);
+			if (searchList(headPtr, pps) == 1)
+			{
+				printf("\nPatient already exists, enter 1 to update patient details:\n");
+				scanf("%d", &patientUpdate);
+
+				if (patientUpdate == 1)
+				{
+					updatePatientAtAdding(&headPtr, pps);
+				}
+				printf("\n");
+			}
 			else
 			{
-				AddElementAtEnd(headPtr);
+				if (headPtr == NULL)
+					AddElementAtStart(&headPtr , pps);
+				else
+				{
+					AddElementAtEnd(headPtr, pps);
+				}
 			}
 			break;
 		case 2:
@@ -95,6 +120,12 @@ void main()
 			else
 				DeleteElementAtPos(headPtr, posFound);
 			break;
+		case 6:
+			generateStats(headPtr);
+			break;
+		case 7:
+			saveDatabase(headPtr);
+			break;
 		default:
 			break;
 		}
@@ -103,23 +134,14 @@ void main()
 
 }// main
 
-void AddElementAtStart(struct node** top)
+// Add patient at the start of the list
+void AddElementAtStart(struct node** top, int ppsNumber)
 {
 	struct node* newNode;
-	int pps;
-
-	printf("Please enter the PPS number of the new patient\n");
-	scanf("%d", &pps);
-
-	if (searchList(*top, pps) == 1)
-	{
-		printf("Sorry the PPS already exists\n");
-		return;
-	}
 
 	newNode = (struct node*)malloc(sizeof(struct node));
 
-	newNode->ppsn = pps;
+	newNode->ppsn = ppsNumber;
 
 	printf("Please enter patient first name\n");
 	scanf("%s", newNode->firstName);
@@ -130,7 +152,7 @@ void AddElementAtStart(struct node** top)
 	printf("Please enter patient year born\n");
 	scanf("%d", &newNode->yearBorn);
 
-	printf("Please enter patient gender\n");
+	printf("Please enter patient gender(m for male or f for female)\n");
 	scanf(" %c", &newNode->gender);
 
 	printf("Please enter patient email\n");
@@ -139,13 +161,13 @@ void AddElementAtStart(struct node** top)
 	printf("Please enter patient next of kin name\n");
 	scanf("%s", newNode->nokName);
 
-	printf("Please enter patient last appointment\n");
+	printf("Please enter patient last appointment(ddmmyyyy format)\n");
 	scanf("%d", &newNode->lastAppointment);
 
-	printf("Please enter patient weight\n");
+	printf("Please enter patient weight in kgs\n");
 	scanf("%f", &newNode->weight);
 
-	printf("Please enter patient height\n");
+	printf("Please enter patient height in meters\n");
 	scanf("%f", &newNode->height);
 
 	newNode->bmi = calculateBMI(newNode->weight, newNode->height);
@@ -166,20 +188,11 @@ void AddElementAtStart(struct node** top)
 	*top = newNode;
 }// AddElementAtStart
 
-void AddElementAtEnd(struct node* top)
+// Add patient at the end of the list
+void AddElementAtEnd(struct node* top, int ppsNumber)
 {
 	struct node* temp = top;
 	struct node* newNode;
-	int PPS;
-
-	printf("Please enter the PPS number of the new patient\n");
-	scanf("%d", &PPS);
-
-	if (searchList(top, PPS) == 1)
-	{
-		printf("Sorry the PPS already exists\n");
-		return;
-	}
 
 	while (temp->NEXT != NULL)
 	{
@@ -188,7 +201,7 @@ void AddElementAtEnd(struct node* top)
 
 	newNode = (struct node*)malloc(sizeof(struct node));
 
-	newNode->ppsn = PPS;
+	newNode->ppsn = ppsNumber;
 
 	printf("Please enter patient first name\n");
 	scanf("%s", newNode->firstName);
@@ -199,7 +212,7 @@ void AddElementAtEnd(struct node* top)
 	printf("Please enter patient year born\n");
 	scanf("%d", &newNode->yearBorn);
 
-	printf("Please enter patient gender\n");
+	printf("Please enter patient gender(m for male or f for female)\n");
 	scanf(" %c", &newNode->gender);
 
 	printf("Please enter patient email\n");
@@ -208,13 +221,13 @@ void AddElementAtEnd(struct node* top)
 	printf("Please enter patient next of kin name\n");
 	scanf("%s", newNode->nokName);
 
-	printf("Please enter patient last appointment\n");
+	printf("Please enter patient last appointment (ddmmyyyy format)\n");
 	scanf("%d", &newNode->lastAppointment);
 
-	printf("Please enter patient weight\n");
+	printf("Please enter patient weight in kgs\n");
 	scanf("%f", &newNode->weight);
 
-	printf("Please enter patient height\n");
+	printf("Please enter patient height in meters\n");
 	scanf("%f", &newNode->height);
 
 	newNode->bmi = calculateBMI(newNode->weight, newNode->height);
@@ -235,6 +248,7 @@ void AddElementAtEnd(struct node* top)
 	temp->NEXT = newNode;
 }
 
+// Delete patient at the start of the list
 void DeleteElementAtStart(struct node** top)
 {
 	struct node* temp;
@@ -246,6 +260,7 @@ void DeleteElementAtStart(struct node** top)
 	free(temp);
 }
 
+// Delete patient at a pos in the list
 void DeleteElementAtPos(struct node* top, int position)
 {
 	int i;
@@ -267,6 +282,7 @@ void DeleteElementAtPos(struct node* top, int position)
 
 }
 
+// Search list for a ppsn and returns position found if ppsn found
 int ppsnToPos(struct node* top, int searchPPS)
 {
 	int counter = 0;
@@ -276,7 +292,6 @@ int ppsnToPos(struct node* top, int searchPPS)
 	while (temp != NULL)
 	{
 		counter++;
-		printf("DEBUGGG %d", counter);
 		if (temp->ppsn == searchPPS)
 		{
 			posFound = counter;
@@ -289,6 +304,7 @@ int ppsnToPos(struct node* top, int searchPPS)
 	return posFound;
 }
 
+// Displays all the details to the screen
 void DisplayList(struct node* top)
 {
 	struct node* temp = top;
@@ -303,6 +319,7 @@ void DisplayList(struct node* top)
 	printf("\n");
 }
 
+// Search the list for a ppsn returns 1 if found or 0 if not found
 int searchList(struct node* top, int searchPPS)
 {
 	int found = 0;
@@ -322,6 +339,7 @@ int searchList(struct node* top, int searchPPS)
 	return found;
 }
 
+// Calculates bmi and returns it as a float
 float calculateBMI(float weight, float height)
 {
 	float bmi = 0;
@@ -331,6 +349,7 @@ float calculateBMI(float weight, float height)
 	return bmi;
 }
 
+// Loads patient.txt into a link list
 void loadDatabase(struct node** top)
 {
 	FILE* inPatientFile;
@@ -464,6 +483,7 @@ void displayPatient(struct node* top)
 	printf("Sorry could not find the patient, please try again...\n\n");
 }// displayPatient
 
+// Returns the length of the list
 int Listlength(struct node* top)
 {
 	struct node* temp;
@@ -525,7 +545,8 @@ void updatePatient(struct node** top)
 		{
 			if (temp->ppsn == pps)
 			{	
-				temp->ppsn = pps;
+				printf("Please enter patient PPSN\n");
+				scanf("%d", &temp->ppsn);
 
 				printf("Please enter patient first name\n");
 				scanf("%s", temp->firstName);
@@ -536,7 +557,7 @@ void updatePatient(struct node** top)
 				printf("Please enter patient year born\n");
 				scanf("%d", &temp->yearBorn);
 
-				printf("Please enter patient gender\n");
+				printf("Please enter patient gender(m for male or f for female)\n");
 				scanf(" %c", &temp->gender);
 
 				printf("Please enter patient email\n");
@@ -545,13 +566,13 @@ void updatePatient(struct node** top)
 				printf("Please enter patient next of kin name\n");
 				scanf("%s", temp->nokName);
 
-				printf("Please enter patient last appointment\n");
+				printf("Please enter patient last appointment(ddmmyyyy format)\n");
 				scanf("%d", &temp->lastAppointment);
 
-				printf("Please enter patient weight\n");
+				printf("Please enter patient weight in kgs\n");
 				scanf("%f", &temp->weight);
 
-				printf("Please enter patient height\n");
+				printf("Please enter patient height in meters\n");
 				scanf("%f", &temp->height);
 
 				temp->bmi = calculateBMI(temp->weight, temp->height);
@@ -578,15 +599,17 @@ void updatePatient(struct node** top)
 			{
 				printf("Please enter patient PPSN\n");
 				scanf("%d", &temp->ppsn);
-				
-				strcpy(temp->firstName, fName);
-				
-				strcpy(temp->secondName, sName);
+
+				printf("Please enter patient first name\n");
+				scanf("%s", temp->firstName);
+
+				printf("Please enter patient second name\n");
+				scanf("%s", temp->secondName);
 
 				printf("Please enter patient year born\n");
 				scanf("%d", &temp->yearBorn);
 
-				printf("Please enter patient gender\n");
+				printf("Please enter patient gender(m for male or f for female)\n");
 				scanf(" %c", &temp->gender);
 
 				printf("Please enter patient email\n");
@@ -595,13 +618,13 @@ void updatePatient(struct node** top)
 				printf("Please enter patient next of kin name\n");
 				scanf("%s", temp->nokName);
 
-				printf("Please enter patient last appointment\n");
+				printf("Please enter patient last appointment(ddmmyyyy format)\n");
 				scanf("%d", &temp->lastAppointment);
 
-				printf("Please enter patient weight\n");
+				printf("Please enter patient weight in kgs\n");
 				scanf("%f", &temp->weight);
 
-				printf("Please enter patient height\n");
+				printf("Please enter patient height in meters\n");
 				scanf("%f", &temp->height);
 
 				temp->bmi = calculateBMI(temp->weight, temp->height);
@@ -628,6 +651,96 @@ void updatePatient(struct node** top)
 
 }// updatePatient
 
+// Update patient if ppsn already exists when adding a new patient
+void updatePatientAtAdding(struct node** top, int ppsNumber)
+{
+	struct node* temp = *top;
+
+	printf("\n");
+
+	while (temp != NULL)
+	{
+		
+		if (temp->ppsn == ppsNumber)
+		{
+			printf("Please enter patient PPSN\n");
+			scanf("%d", &temp->ppsn);
+
+			printf("Please enter patient first name\n");
+			scanf("%s", temp->firstName);
+
+			printf("Please enter patient second name\n");
+			scanf("%s", temp->secondName);
+
+			printf("Please enter patient year born\n");
+			scanf("%d", &temp->yearBorn);
+
+			printf("Please enter patient gender(m for male or f for female)\n");
+			scanf(" %c", &temp->gender);
+
+			printf("Please enter patient email\n");
+			scanf("%s", temp->email);
+
+			printf("Please enter patient next of kin name\n");
+			scanf("%s", temp->nokName);
+
+			printf("Please enter patient last appointment(ddmmyyyy format)\n");
+			scanf("%d", &temp->lastAppointment);
+
+			printf("Please enter patient weight in kgs\n");
+			scanf("%f", &temp->weight);
+
+			printf("Please enter patient height in meters\n");
+			scanf("%f", &temp->height);
+
+			temp->bmi = calculateBMI(temp->weight, temp->height);
+
+			printf("Does the patient has any allergies to any medications?\n Enter 'y' for yes or 'n' for no\n");
+			scanf(" %c", &temp->allergies);
+
+			printf("How many cigarettes would you smoke per day?\n Enter 'n' for none\n'l' for less than 10 or 'm' for more than 10\n");
+			scanf(" %c", &temp->cigaretters);
+
+			printf("How much alcohol would you drink per week?\n Enter 'n' for none\n'l' for less than 10 units or 'm' for more than 10 units\n");
+			scanf(" %c", &temp->alcohol);
+
+			printf("How often do you exercise?\n Enter 'n' for never\n'l' for less than twice per week or 'm' for more than than twice per week\n");
+			scanf(" %c", &temp->exercise);
+
+			printf("\n\nSuccessfully updated patient %d details.\n\n", ppsNumber);
+			return;
+		}// if
+
+		temp = temp->NEXT;
+	}// while
+
+}
+
+// Saves the link list to the patient.txt file
+void saveDatabase(struct node* top)
+{
+	struct node* temp = top;
+	FILE* outPatientFile;
+
+	outPatientFile = fopen("patient.txt", "w");
+
+	if (outPatientFile == NULL)
+	{
+		printf("Apologies the file could not be opened\n");
+	}
+	else
+	{
+		while (temp != NULL)
+		{
+
+			fprintf(outPatientFile,"%d  %s %s  %d %c %s %s %d %.2f %.2f %.2f %c %c %c %c \n", temp->ppsn, temp->firstName, temp->secondName, temp->yearBorn, temp->gender, temp->email, temp->nokName, temp->lastAppointment, temp->weight, temp->height, temp->bmi, temp->allergies, temp->cigaretters, temp->alcohol, temp->exercise);
+			temp = temp->NEXT;
+		}
+
+		fclose(outPatientFile);
+	}// else
+	printf("\n");
+}
 
 // Login Validation 
 void login() 
@@ -716,3 +829,142 @@ void login()
 	// Clear the screen
 	system("cls"); 
 }// login 
+
+// Generate stats
+void generateStats(struct node* top)
+{
+	struct node* temp = top;
+	int criteria = 0;
+	char answer;
+	float less18 = 0, less25 = 0, less30 = 0, more30 = 0;
+	float total = 0;
+	float stat1 =0, stat2 =0, stat3 = 0, stat4 = 0;
+
+	do
+	{
+		printf("\n\nSelect a criteria to generate stats on:\n");
+		printf("===============================================\n");
+		printf(" 1 - How many cigarettes would you smoke per day\n");
+		printf(" 2 - How often do you exercise\n");
+		printf("===============================================\n");
+		scanf("%d", &criteria);
+
+	} while (criteria != 1 && criteria !=2);
+
+	// if criteria is exercise ...
+	if (criteria == 2)
+	{
+		do
+		{
+			printf("\nHow often do you exercise? (case sensitive)\n\n");
+			printf(" Enter 'n' for never\n");
+			printf(" Enter 'l' for less than twice per week\n");
+			printf(" Enter 'm' for more than twice per week\n");
+			scanf(" %c", &answer);
+		} while (answer != 'n' && answer != 'l' && answer != 'm');
+	
+		while (temp != NULL)
+		{
+			if (temp->exercise == answer)
+			{
+				// check bmi
+				if (temp->bmi < 18.5)
+				{
+					less18++;
+				}
+				else if (temp->bmi < 25)
+				{
+					less25++;
+				}
+				else if (temp->bmi < 30)
+				{
+					less30++;
+				}
+				else
+				{
+					more30++;
+				}
+			}
+			
+
+			temp = temp->NEXT;
+		}
+
+		// Total from the patients that count towards stats
+		total = less18 + less25 + less30 + more30;
+
+		stat1 = (less18 / total) * 100;
+		stat2 = (less25 / total) * 100;
+		stat3 = (less30 / total) * 100;
+		stat4 = (more30 / total) * 100;
+
+		// output stats to screen
+		printf("\n %.0f%% of patients with a BMI of less than 18.5\n", stat1);
+		printf(" %.0f%% of patients with a BMI of less than 25\n", stat2);
+		printf(" %.0f%% of patients with a BMI of less than 30\n", stat3);
+		printf(" %.0f%% of patients with a BMI of greater than 30\n\n", stat4);
+	}
+	else // if criteria is cigarettes
+	{
+		do
+		{
+			printf("\nHow many cigarettes would you smoke per day? (case sensitive)\n\n");
+			printf(" Enter 'n' for none\n");
+			printf(" Enter 'l' for less than ten\n");
+			printf(" Enter 'm' for more than ten\n");
+			scanf(" %c", &answer);
+		} while (answer != 'n' && answer != 'l' && answer != 'm');
+
+		while (temp != NULL)
+		{
+			printf("\n\nDEBUGG INSIDE ARRAY\n\n");
+
+			if (temp->cigaretters == answer)
+			{
+				printf("\n\nDEBUGG INSIDE if %c %.2f\n\n", temp->cigaretters, temp->bmi);
+
+				// check bmi
+				if (temp->bmi < 18.5)
+				{
+					less18++;
+					printf("\n\nDEBUGG INSIDE 18 %f\n\n", less18);
+
+				}
+				else if (temp->bmi < 25)
+				{
+					less25++;
+					printf("\n\nDEBUGG INSIDE 25 %f\n\n", less25);
+				}
+				else if (temp->bmi < 30)
+				{
+					less30++;
+				}
+				else
+				{
+					more30++;
+					printf("\n\nDEBUGG INSIDE 30+ %f\n\n", more30);
+				}
+			}
+
+
+			temp = temp->NEXT;
+		}
+
+		// Total from the patients that count towards stats
+		total = less18 + less25 + less30 + more30;
+		printf("\n\nDEBUGG TOTAL %f\n\n", total);
+
+		stat1 = (less18 / total) * 100;
+		stat2 = (less25 / total) * 100;
+		stat3 = (less30 / total) * 100;
+		stat4 = (more30 / total) * 100;
+
+		printf("\n %.0f%% of patients with a BMI of less than 18.5\n", stat1);
+		printf(" %.0f%% of patients with a BMI of less than 25\n", stat2);
+		printf(" %.0f%% of patients with a BMI of less than 30\n", stat3);
+		printf(" %.0f%% of patients with a BMI of greater than 30\n\n", stat4);
+
+
+	}// if else
+
+}
